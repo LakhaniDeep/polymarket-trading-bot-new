@@ -45,7 +45,7 @@ impl RateLimitBuilder {
     {
         let builder = RouteBuilder::new();
         let configured = configure(builder);
-        self.routes.push(configured.into_route());
+        self.routes.push(configured.build());
         self
     }
 
@@ -93,9 +93,17 @@ impl RateLimitBuilder {
         self
     }
 
-    /// Add a pre-configured route.
+    /// Add a pre-configured route built via [`RouteBuilder::build`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the route has no limits configured.
     #[must_use]
     pub fn add_route(mut self, route: Route) -> Self {
+        assert!(
+            !route.limits.is_empty(),
+            "route must have at least one limit configured via .limit()"
+        );
         self.routes.push(route);
         self
     }
@@ -255,6 +263,8 @@ impl HostRouteBuilder {
     }
 
     /// Set the behavior when rate limit is exceeded.
+    ///
+    /// Defaults to [`ThrottleBehavior::Delay`] if not called.
     #[must_use]
     pub fn on_limit(mut self, behavior: ThrottleBehavior) -> Self {
         self.on_limit = behavior;
@@ -280,7 +290,15 @@ impl RouteBuilder {
         Self::default()
     }
 
-    fn into_route(self) -> Route {
+    /// Build the route.
+    ///
+    /// Returns a [`Route`] that can be passed to [`RateLimitBuilder::add_route`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if no limits are configured via `.limit()`.
+    #[must_use]
+    pub fn build(self) -> Route {
         assert!(
             !self.limits.is_empty(),
             "route must have at least one limit configured via .limit()"
@@ -326,6 +344,8 @@ impl RouteBuilder {
     }
 
     /// Set the behavior when rate limit is exceeded.
+    ///
+    /// Defaults to [`ThrottleBehavior::Delay`] if not called.
     #[must_use]
     pub fn on_limit(mut self, behavior: ThrottleBehavior) -> Self {
         self.on_limit = behavior;

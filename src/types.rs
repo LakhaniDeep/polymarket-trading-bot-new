@@ -5,6 +5,7 @@ use std::time::Duration;
 
 /// Behavior when a rate limit is exceeded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub enum ThrottleBehavior {
     /// Delay the request until the rate limit window allows it.
     #[default]
@@ -60,18 +61,53 @@ impl RateLimit {
 }
 
 /// A route definition that matches requests and applies rate limits.
+///
+/// Routes are constructed via [`RouteBuilder::build`](crate::RouteBuilder::build) or the
+/// closure-based [`RateLimitBuilder::route`](crate::RateLimitBuilder::route) API.
 #[derive(Debug, Clone)]
 pub struct Route {
     /// Optional host to match (e.g., "api.example.com").
-    pub host: Option<String>,
+    pub(crate) host: Option<String>,
     /// Optional HTTP method to match.
-    pub method: Option<Method>,
+    pub(crate) method: Option<Method>,
     /// Path prefix to match (e.g., "/order"). Empty matches all paths.
-    pub path_prefix: String,
+    pub(crate) path_prefix: String,
     /// Rate limits to apply (all must pass).
-    pub limits: Vec<RateLimit>,
+    pub(crate) limits: Vec<RateLimit>,
     /// Behavior when rate limit is exceeded.
-    pub on_limit: ThrottleBehavior,
+    pub(crate) on_limit: ThrottleBehavior,
+}
+
+impl Route {
+    /// Returns the host filter, if any.
+    #[must_use]
+    pub fn host(&self) -> Option<&str> {
+        self.host.as_deref()
+    }
+
+    /// Returns the HTTP method filter, if any.
+    #[must_use]
+    pub fn method(&self) -> Option<&Method> {
+        self.method.as_ref()
+    }
+
+    /// Returns the path prefix filter. Empty string means all paths match.
+    #[must_use]
+    pub fn path_prefix(&self) -> &str {
+        &self.path_prefix
+    }
+
+    /// Returns the configured rate limits.
+    #[must_use]
+    pub fn limits(&self) -> &[RateLimit] {
+        &self.limits
+    }
+
+    /// Returns the behavior when a rate limit is exceeded.
+    #[must_use]
+    pub fn on_limit(&self) -> ThrottleBehavior {
+        self.on_limit
+    }
 }
 
 impl Route {

@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use http::Method;
 use route_ratelimit::{RateLimitMiddleware, ThrottleBehavior};
 use std::sync::Arc;
@@ -22,10 +22,7 @@ fn bench_check_and_apply_limits(c: &mut Criterion) {
 
         // Request that matches the last route (worst case: checks all routes)
         let req = reqwest::Client::new()
-            .get(format!(
-                "https://api.example.com/path{}",
-                route_count - 1
-            ))
+            .get(format!("https://api.example.com/path{}", route_count - 1))
             .build()
             .unwrap();
 
@@ -38,9 +35,7 @@ fn bench_check_and_apply_limits(c: &mut Criterion) {
                     .build()
                     .unwrap();
                 b.iter(|| {
-                    rt.block_on(async {
-                        black_box(middleware.check_and_apply_limits(&req).await)
-                    })
+                    rt.block_on(async { black_box(middleware.check_and_apply_limits(&req).await) })
                 })
             },
         );
@@ -84,9 +79,7 @@ fn bench_route_matching(c: &mut Criterion) {
             .build()
             .unwrap();
         b.iter(|| {
-            rt.block_on(async {
-                black_box(middleware.check_and_apply_limits(&req_hit).await)
-            })
+            rt.block_on(async { black_box(middleware.check_and_apply_limits(&req_hit).await) })
         })
     });
 
@@ -96,9 +89,7 @@ fn bench_route_matching(c: &mut Criterion) {
             .build()
             .unwrap();
         b.iter(|| {
-            rt.block_on(async {
-                black_box(middleware.check_and_apply_limits(&req_miss).await)
-            })
+            rt.block_on(async { black_box(middleware.check_and_apply_limits(&req_miss).await) })
         })
     });
 
@@ -134,9 +125,7 @@ fn bench_stacked_limits(c: &mut Criterion) {
                     .build()
                     .unwrap();
                 b.iter(|| {
-                    rt.block_on(async {
-                        black_box(middleware.check_and_apply_limits(&req).await)
-                    })
+                    rt.block_on(async { black_box(middleware.check_and_apply_limits(&req).await) })
                 })
             },
         );

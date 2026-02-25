@@ -9,7 +9,7 @@ use route_ratelimit::{RateLimitMiddleware, ThrottleBehavior};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Helper to create a mock server with a simple OK response.
@@ -526,4 +526,172 @@ async fn test_catch_all_route() {
     // Third request to any path should fail
     let resp = client.get(format!("{}/", server.uri())).send().await;
     assert!(resp.is_err(), "Catch-all should apply to all paths");
+}
+
+// =============================================================================
+// Host Matching with Ports
+// =============================================================================
+
+#[tokio::test]
+async fn test_host_matching_ignores_port() {
+    let server = setup_mock_server().await;
+
+    // wiremock URIs are like http://127.0.0.1:<port>
+    // The host is always 127.0.0.1 — the middleware should match
+    // even though the URL includes a port number.
+    let host = "127.0.0.1";
+
+    // Configure rate limit using only the host (no port)
+    let middleware = RateLimitMiddleware::builder()
+        .host(host, |h| {
+            h.route(|r| {
+                r.limit(1, Duration::from_secs(10))
+                    .on_limit(ThrottleBehavior::Error)
+            })
+        })
+        .build();
+
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    // First request should match the host (port excluded) and succeed
+    let resp = client.get(format!("{}/test", server.uri())).send().await;
+    assert!(resp.is_ok(), "Host matching should ignore port");
+
+    // Second should be rate limited (proves the host matched)
+    let resp = client.get(format!("{}/test", server.uri())).send().await;
+    assert!(
+        resp.is_err(),
+        "Should be rate limited, proving host matched despite port"
+    );
+}
+
+// =============================================================================
+// Default Middleware (No Routes)
+// =============================================================================
+
+#[tokio::test]
+async fn test_default_middleware_allows_all_requests() {
+    let server = setup_mock_server().await;
+
+    // Default middleware has no routes - all requests should pass through
+    let middleware = RateLimitMiddleware::default();
+
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let url = format!("{}/test", server.uri());
+
+    // Many requests should all succeed
+    for i in 0..20 {
+        let resp = client.get(&url).send().await;
+        assert!(
+            resp.is_ok(),
+            "Request {i} should succeed with no routes configured"
+        );
+    }
+}
+
+// =============================================================================
+// Query String Handling
+// =============================================================================
+
+#[tokio::test]
+async fn test_path_matching_ignores_query_strings() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let middleware = RateLimitMiddleware::builder()
+        .route(|r| {
+            r.path("/order")
+                .limit(1, Duration::from_secs(10))
+                .on_limit(ThrottleBehavior::Error)
+        })
+        .build();
+
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    // Request with query string should match the path prefix
+    let resp = client
+        .get(format!("{}/order?id=123&status=open", server.uri()))
+        .send()
+        .await;
+    assert!(resp.is_ok(), "First request with query string should match");
+
+    // Second request (different query string, same path) should be rate limited
+    let resp = client
+        .get(format!("{}/order?id=456", server.uri()))
+        .send()
+        .await;
+    assert!(
+        resp.is_err(),
+        "Second request should be rate limited (same path, different query)"
+    );
+}
+
+// =============================================================================
+// HTTP Method Matching
+// =============================================================================
+
+#[tokio::test]
+async fn test_method_matching_put_patch_head_options() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+
+    let middleware = RateLimitMiddleware::builder()
+        .route(|r| {
+            r.method(Method::PUT)
+                .path("/resource")
+                .limit(1, Duration::from_secs(10))
+                .on_limit(ThrottleBehavior::Error)
+        })
+        .route(|r| {
+            r.method(Method::PATCH)
+                .path("/resource")
+                .limit(1, Duration::from_secs(10))
+                .on_limit(ThrottleBehavior::Error)
+        })
+        .build();
+
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let url = format!("{}/resource", server.uri());
+
+    // PUT and PATCH have separate limits
+    client.put(&url).send().await.unwrap();
+    client.patch(&url).send().await.unwrap();
+
+    // Second PUT should fail
+    assert!(
+        client.put(&url).send().await.is_err(),
+        "Second PUT should be rate limited"
+    );
+
+    // Second PATCH should also fail
+    assert!(
+        client.patch(&url).send().await.is_err(),
+        "Second PATCH should be rate limited"
+    );
+
+    // HEAD and OPTIONS should NOT be limited (no matching route)
+    assert!(
+        client.head(&url).send().await.is_ok(),
+        "HEAD should not be rate limited (no matching route)"
+    );
+    assert!(
+        client.head(&url).send().await.is_ok(),
+        "HEAD should still not be rate limited"
+    );
 }

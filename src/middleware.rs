@@ -95,14 +95,14 @@ impl RateLimitMiddleware {
         match route.on_limit {
             ThrottleBehavior::Delay => {
                 // Add jitter (0-50% of wait duration) to prevent thundering herd
-                let jitter_max_nanos = wait_duration.as_nanos() as u64 / 2;
+                let jitter_max_nanos =
+                    u64::try_from(wait_duration.as_nanos() / 2).unwrap_or(u64::MAX);
                 let jitter_nanos = if jitter_max_nanos > 0 {
                     rand::rng().random_range(0..=jitter_max_nanos)
                 } else {
                     0
                 };
-                let sleep_duration =
-                    wait_duration + Duration::from_nanos(jitter_nanos);
+                let sleep_duration = wait_duration + Duration::from_nanos(jitter_nanos);
                 sleep(sleep_duration).await;
                 Ok(())
             }

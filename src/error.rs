@@ -5,6 +5,7 @@ use thiserror::Error;
 
 /// Errors that can occur during rate limiting.
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum RateLimitError {
     /// The request was rate limited and the configured behavior is to error.
     #[error("rate limit exceeded, retry after {0:?}")]
