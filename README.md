@@ -165,25 +165,6 @@ route-ratelimit = { version = "0.1", features = ["tracing"] }
 
 This enables warnings for potentially problematic configurations (e.g., catch-all routes preceding specific routes).
 
-## Memory Management
-
-For long-running applications, periodically clean up stale rate limit state:
-
-```rust
-use route_ratelimit::RateLimitMiddleware;
-use std::time::Duration;
-
-let middleware = RateLimitMiddleware::builder()
-    .route(|r| r.limit(100, Duration::from_secs(10)))
-    .build();
-
-// Call periodically (e.g., every hour)
-middleware.cleanup();
-
-// Monitor state size
-println!("Active rate limit entries: {}", middleware.state_count());
-```
-
 ## Examples
 
 See the [examples](examples/) directory for complete usage examples:

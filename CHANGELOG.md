@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ThrottleBehavior::Error` - returns error immediately when rate limited
 - Host-scoped builder API for clean multi-route configuration
 - Shared state across client clones
-- Memory cleanup API for long-running applications
 - Optional `tracing` feature for diagnostic logging
 
 [Unreleased]: https://github.com/haut/route-ratelimit/compare/v0.1.0...HEAD

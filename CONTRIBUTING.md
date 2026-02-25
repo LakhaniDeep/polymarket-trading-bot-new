@@ -12,7 +12,7 @@ Thank you for your interest in contributing to route-ratelimit!
 
 ### Prerequisites
 
-- Rust 1.85.0 or later
+- Rust 1.88.0 or later
 - Cargo
 
 ### Building
