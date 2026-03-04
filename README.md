@@ -1,210 +1,381 @@
-# route-ratelimit
+# Polymarket Trading Bot — Rust Implementation
 
-[![Crates.io](https://img.shields.io/crates/v/route-ratelimit.svg)](https://crates.io/crates/route-ratelimit)
-[![Documentation](https://docs.rs/route-ratelimit/badge.svg)](https://docs.rs/route-ratelimit)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/haut/route-ratelimit/actions/workflows/ci.yml/badge.svg)](https://github.com/haut/route-ratelimit/actions/workflows/ci.yml)
-[![MSRV](https://img.shields.io/badge/MSRV-1.88.0-blue.svg)](https://blog.rust-lang.org/2025/06/26/Rust-1.88.0.html)
+A professional-grade Rust trading automation system for [Polymarket](https://polymarket.com), enabling sophisticated algorithmic trading strategies for cryptocurrency prediction markets. This enterprise-ready solution provides automated execution, risk management, and backtesting capabilities for 15-minute and 5-minute market cycles across BTC, ETH, SOL, XRP, and sports markets.
 
-Route-based rate limiting middleware for [reqwest](https://github.com/seanmonstar/reqwest).
+---
 
-## Features
+## Overview
 
-- **Endpoint matching**: Match requests by host, HTTP method, and path prefix
-- **Multiple rate limits**: Stack burst and sustained limits on the same endpoint
-- **Configurable behavior**: Choose to delay requests or return errors per endpoint
-- **Lock-free performance**: Uses GCRA algorithm with atomic operations
-- **Shared state**: Rate limits are tracked across all client clones
+This trading bot implements advanced strategies including dual-limit order placement, arbitrage-style hedging, trailing stop mechanisms, and comprehensive backtesting. Built with Rust for performance, reliability, and memory safety, it offers institutional-quality automation for Polymarket prediction markets.
 
-## Installation
+---
 
-Add to your `Cargo.toml`:
+## Key Features
 
-```toml
-[dependencies]
-route-ratelimit = "0.1"
-reqwest = "0.12"
-reqwest-middleware = "0.4"
-```
+### Trading Strategies
+
+- **Dual Limit Same-Size Strategy (0.45)** — Automated limit order placement at $0.45 for Up/Down positions at market start, with intelligent hedging mechanisms (2-minute, 4-minute, early, and standard triggers)
+- **Dual Limit 5-Minute BTC Strategy** — Specialized implementation for BTC 5-minute markets with time-based bands and trailing stop protection
+- **Trailing Stop Strategy** — Dynamic position management with trailing stop-loss and profit protection mechanisms
+- **Comprehensive Backtesting Engine** — Historical strategy validation using recorded price data
+- **Test Suite** — Complete testing utilities for order placement, redemption, merging, allowance management, and market operations
+
+### Technical Capabilities
+
+- High-performance Rust implementation with async/await support
+- Real-time market monitoring and order execution
+- Automated risk management and position hedging
+- Configurable trading parameters and strategy customization
+- Extensive logging and monitoring capabilities
+
+---
 
 ## Quick Start
 
-```rust
-use route_ratelimit::RateLimitMiddleware;
-use reqwest_middleware::ClientBuilder;
-use std::time::Duration;
+### Prerequisites
 
-#[tokio::main]
-async fn main() {
-    let middleware = RateLimitMiddleware::builder()
-        .route(|r| r.limit(100, Duration::from_secs(10)))
-        .build();
+- Rust 1.70+ (install via [rustup](https://rustup.rs))
+- Polymarket API credentials (API key, secret, passphrase)
+- Ethereum-compatible private key for signing transactions
+- Sufficient USDC balance for trading operations
 
-    let client = ClientBuilder::new(reqwest::Client::new())
-        .with(middleware)
-        .build();
+### Installation
 
-    // Requests are automatically rate-limited
-    client.get("https://api.example.com/data").send().await.unwrap();
-}
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd polymarket-arbitrage-trading-bot-rust
+   ```
+
+2. **Build the project:**
+   ```bash
+   cargo build --release
+   ```
+
+3. **Configure credentials:**
+   ```bash
+   cp config.example.json config.json
+   # Edit config.json with your Polymarket API credentials and private key
+   ```
+
+4. **Set on-chain approvals (one-time setup):**
+   ```bash
+   cargo run --bin test_allowance -- --approve-only
+   ```
+
+---
+
+## Available Binaries
+
+| Binary | Description | Use Case |
+|--------|-------------|----------|
+| `main_dual_limit_045_same_size` | Dual limit order strategy at $0.45 with same-size hedging | Default production strategy |
+| `main_dual_limit_045_5m_btc` | BTC 5-minute market specialization | BTC-focused trading |
+| `main_trailing` | Trailing stop-loss strategy | Risk-averse position management |
+| `backtest` | Historical strategy validation | Strategy development and testing |
+| `test_limit_order` | Limit order placement testing | Order execution validation |
+| `test_redeem` | Token redemption utilities | Position management |
+| `test_merge` | Complete set merging | Portfolio optimization |
+| `test_allowance` | Balance and approval management | Account setup |
+| `test_sell` | Market sell operations | Exit strategy testing |
+| `test_predict_fun` | Prediction logic validation | Strategy development |
+
+---
+
+## Strategy Documentation
+
+### 1. Dual Limit Same-Size Strategy (0.45)
+
+**Binary:** `main_dual_limit_045_same_size`
+
+**Execution Flow:**
+1. At market start (first ~5 seconds), places limit buy orders for BTC and enabled ETH/SOL/XRP Up/Down positions at $0.45
+2. **Both positions fill:** Strategy completes for that market
+3. **Single position fills:** Applies intelligent hedging:
+   - **2-minute hedge:** Triggered within 2-3 minutes of market start
+   - **4-minute hedge:** Triggered within 4-5 minutes
+   - **Early hedge:** Triggered after 5 minutes if unfilled position price ≥ $0.85
+   - **Standard hedge:** Triggered after 10 minutes if unfilled position price ≥ $0.85
+4. Hedging mechanism: Market buy on unfilled side (same size), cancel unfilled $0.45 limit order
+
+**Low-Price Exit Strategy:**
+Two limit sell orders ($0.05/$0.99 or $0.02/$0.99) are placed when:
+- Minimum 10 minutes have elapsed since market start
+- Market was hedged via 4-minute, early, or standard mechanism (not 2-minute)
+- One side's bid price falls below 0.10 (or 0.03 for $0.02/$0.99 path when hedge price < 0.60)
+
+**Usage:**
+```bash
+# Simulation mode (no real orders)
+cargo run --bin main_dual_limit_045_same_size -- --simulation
+
+# Production mode
+cargo run --bin main_dual_limit_045_same_size -- --no-simulation
 ```
 
-## Usage
+### 2. Dual Limit 5-Minute BTC Strategy
 
-### Host-Scoped Routes
+**Binary:** `main_dual_limit_045_5m_btc`
 
-Organize rate limits by host for cleaner configuration:
+Specialized implementation for BTC 5-minute markets featuring:
+- Dual limit orders at $0.45
+- Time-based trading windows (2-minute: 2-3 min, 3-minute: ≥3 min)
+- Price band monitoring with trailing stop (e.g., buy when ask ≥ lowest_ask + 0.03)
 
-```rust
-use route_ratelimit::RateLimitMiddleware;
-use std::time::Duration;
-use http::Method;
-
-let middleware = RateLimitMiddleware::builder()
-    .host("api.example.com", |host| {
-        host
-            // General limit for all endpoints on this host
-            .route(|r| r.limit(9000, Duration::from_secs(10)))
-            // Specific limit for /book endpoints (both limits apply)
-            .route(|r| r.path("/book").limit(1500, Duration::from_secs(10)))
-            // Method + path specific limits
-            .route(|r| {
-                r.method(Method::POST)
-                    .path("/order")
-                    .limit(3500, Duration::from_secs(10))   // Burst
-                    .limit(36000, Duration::from_secs(600)) // Sustained
-            })
-    })
-    .build();
+**Usage:**
+```bash
+cargo run --bin main_dual_limit_045_5m_btc -- --config config.json --simulation
+cargo run --bin main_dual_limit_045_5m_btc -- --config config.json --no-simulation
 ```
 
-### Multiple Limits (Burst + Sustained)
+### 3. Trailing Stop Strategy
 
-Apply both burst and sustained limits to the same endpoint:
+**Binary:** `main_trailing`
 
-```rust
-use route_ratelimit::RateLimitMiddleware;
-use std::time::Duration;
+**Execution Flow:**
+1. Monitors market prices until one token's price falls below $0.45
+2. Initiates trailing stop on the identified token (with $0.45 cap)
+3. After first buy, implements stop-loss and trailing stop mechanisms for the opposite token
 
-let middleware = RateLimitMiddleware::builder()
-    .route(|r| {
-        r.path("/api")
-            .limit(100, Duration::from_secs(10))   // Burst: 100 req/10s
-            .limit(1000, Duration::from_secs(600)) // Sustained: 1000 req/10min
-    })
-    .build();
+**Usage:**
+```bash
+cargo run --bin main_trailing -- --simulation
+cargo run --bin main_trailing -- --no-simulation
 ```
 
-### Error Behavior
+### 4. Backtesting Engine
 
-By default, requests are delayed until they can proceed. Use `ThrottleBehavior::Error` to fail fast:
+**Binary:** `backtest`
 
-```rust
-use route_ratelimit::{RateLimitMiddleware, ThrottleBehavior};
-use std::time::Duration;
+Replays dual-limit strategy on historical price data stored in `history/market_*_prices.toml`:
+- Simulates limit buy orders at $0.45
+- Models order fills based on historical prices
+- Applies hedging logic
+- Calculates profit and loss (PnL)
 
-let middleware = RateLimitMiddleware::builder()
-    .route(|r| {
-        r.limit(10, Duration::from_secs(1))
-            .on_limit(ThrottleBehavior::Error) // Return error immediately
-    })
-    .build();
+**Usage:**
+```bash
+cargo run --bin backtest -- --backtest
 ```
 
-## Route Matching
+---
 
-### All Matching Routes Apply
+## Configuration
 
-Routes are checked in order, and **all matching routes' limits are applied**. This allows layering general limits with specific ones:
+### Configuration File Structure
 
-```rust
-use route_ratelimit::RateLimitMiddleware;
-use std::time::Duration;
+The `config.json` file contains two main sections:
 
-let middleware = RateLimitMiddleware::builder()
-    .host("api.example.com", |host| {
-        host
-            // This applies to ALL requests to api.example.com
-            .route(|r| r.limit(9000, Duration::from_secs(10)))
-            // This ALSO applies to /book requests (both limits enforced)
-            .route(|r| r.path("/book").limit(1500, Duration::from_secs(10)))
-    })
-    .build();
+#### Polymarket Configuration (`polymarket`)
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `gamma_api_url` | Yes | Polymarket Gamma API endpoint |
+| `clob_api_url` | Yes | Polymarket CLOB API endpoint |
+| `api_key` | Yes | Polymarket API key (UUID format) |
+| `api_secret` | Yes | Polymarket API secret |
+| `api_passphrase` | Yes | Polymarket API passphrase |
+| `private_key` | Yes | Ethereum-compatible private key (hex format, with or without 0x prefix) |
+| `proxy_wallet_address` | No | Proxy wallet address (for POLY_PROXY or GNOSIS_SAFE signature types) |
+| `signature_type` | No | Signature type: `0` = EOA, `1` = POLY_PROXY, `2` = GNOSIS_SAFE |
+
+#### Trading Configuration (`trading`)
+
+| Field | Description |
+|-------|-------------|
+| `check_interval_ms` | Market monitoring interval in milliseconds |
+| `fixed_trade_amount` | Base trade size in USDC |
+| `enable_btc_trading` | Enable BTC market trading |
+| `enable_eth_trading` | Enable ETH market trading |
+| `enable_solana_trading` | Enable SOL market trading |
+| `enable_xrp_trading` | Enable XRP market trading |
+| `dual_limit_price` | Limit order price (typically 0.45) |
+| `dual_limit_shares` | Shares per limit order |
+| `dual_limit_hedge_after_minutes` | Minutes before standard hedge trigger |
+| `dual_limit_hedge_price` | Price threshold for hedge trigger |
+| `dual_limit_early_hedge_minutes` | Minutes before early hedge trigger |
+| `trailing_stop_point` | Trailing stop distance (e.g., 0.03) |
+| `trailing_shares` | Shares for trailing stop orders |
+
+### Command-Line Options
+
+- `--simulation` — Run in simulation mode (no real orders placed)
+- `--no-simulation` — Run in production mode (real orders executed)
+- `--config <path>` — Specify custom configuration file path (default: `config.json`)
+
+---
+
+## Testing Utilities
+
+### Order Management
+```bash
+# Place a test limit order
+cargo run --bin test_limit_order -- --price-cents 60 --shares 10
+
+# Test market sell
+cargo run --bin test_sell
 ```
 
-### Host Matching
+### Position Management
+```bash
+# List redeemable positions
+cargo run --bin test_redeem -- --list
 
-Host matching uses only the hostname, **excluding the port**:
+# Redeem all winning positions
+cargo run --bin test_redeem -- --redeem-all
 
-```rust
-// Matches: https://api.example.com/path
-// Matches: https://api.example.com:8443/path
-// Does NOT match: https://other.example.com/path
-.host("api.example.com", |h| h.route(|r| r.limit(100, Duration::from_secs(10))))
+# Merge complete sets to USDC
+cargo run --bin test_merge -- --merge
 ```
 
-### Path Matching
+### Account Management
+```bash
+# Check balance and allowance
+cargo run --bin test_allowance -- --list
 
-Path matching uses **segment boundaries**, not simple prefix matching:
-
-| Pattern  | Matches                        | Does NOT Match       |
-|----------|--------------------------------|----------------------|
-| `/order` | `/order`, `/order/`, `/order/123` | `/orders`, `/order-test` |
-| `/api/v1` | `/api/v1/users`, `/api/v1/`   | `/api/v2`, `/api/v10` |
-
-## Performance
-
-The hot path is optimized for minimal overhead per request:
-
-```
-Request
-  │
-  ▼
-Extract host, method, path (once)
-  │
-  ▼
-┌─────────────────────────────┐
-│  For each matching route:   │◄── all matching routes apply
-│  check stacked limits via   │
-│  GCRA (lock-free atomic)    │
-└─────────┬───────────────────┘
-          │
-    ┌─────┴─────┐
-    │  Allowed?  │
-    ┌───┘       └───┐
-    ▼               ▼
-  Pass        Delay w/ jitter
-              or return error
+# Set on-chain approval (one-time setup)
+cargo run --bin test_allowance -- --approve-only
 ```
 
-- **Lock-free**: GCRA algorithm uses `AtomicU64` compare-exchange — no mutexes or shard locks
-- **Zero allocation on hot path**: all state pre-allocated at build time in a flat array, indexed by precomputed offsets
-- **Single URL parse**: host, method, and path extracted once before iterating routes
-- **Cold-path optimization**: rate-limited branch marked `#[cold]` to keep the happy path compact in instruction cache
-
-## Optional Features
-
-### Tracing Support
-
-Enable the `tracing` feature for diagnostic logging:
-
-```toml
-[dependencies]
-route-ratelimit = { version = "0.1", features = ["tracing"] }
+### Strategy Development
+```bash
+# Test prediction logic
+cargo run --bin test_predict_fun
 ```
 
-This enables warnings for potentially problematic configurations (e.g., catch-all routes preceding specific routes).
+---
 
-## Examples
+## Security Best Practices
 
-See the [examples](examples/) directory for complete usage examples:
+### Credential Management
 
-- [Polymarket API](examples/polymarket.rs) - Complete rate limit configuration for a real-world API
+- **Never commit `config.json`** containing real API keys or private keys to version control
+- Use environment variables or secure credential management systems in production
+- Rotate API credentials regularly
+- Use separate API keys for testing and production environments
 
-## Minimum Supported Rust Version
+### Operational Security
 
-This crate requires Rust 1.88.0 or later.
+- Start with simulation mode to validate strategy behavior
+- Use small trade sizes during initial testing
+- Monitor logs and account balances continuously
+- Set appropriate stop-loss and position size limits
+- Implement rate limiting and error handling for production deployments
+
+### Private Key Security
+
+- Store private keys securely using hardware wallets or key management systems when possible
+- Use proxy wallets (POLY_PROXY or GNOSIS_SAFE) for enhanced security
+- Never share private keys or API credentials
+- Regularly audit access logs and trading activity
+
+---
+
+## Monitoring and Logging
+
+The bot provides comprehensive logging for:
+- Market monitoring and price updates
+- Order placement and execution status
+- Position management and hedging decisions
+- Error conditions and retry attempts
+- Performance metrics and PnL tracking
+
+Logs are written to standard output and can be redirected to files for analysis:
+```bash
+cargo run --bin main_dual_limit_045_same_size -- --no-simulation 2>&1 | tee trading.log
+```
+
+---
+
+## Performance Considerations
+
+- **Async Architecture:** Built on Tokio runtime for high-concurrency market monitoring
+- **Memory Efficiency:** Rust's zero-cost abstractions ensure minimal memory footprint
+- **Network Optimization:** Efficient API request handling with connection pooling
+- **Error Recovery:** Robust retry mechanisms and error handling for network issues
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Authentication Failures:**
+- Verify API credentials are correct and in UUID format
+- Ensure private key is valid hex format
+- Check network connectivity to Polymarket APIs
+
+**Order Execution Failures:**
+- Verify sufficient USDC balance
+- Check on-chain approvals are set (`test_allowance --approve-only`)
+- Confirm market is active and accepting orders
+
+**Symbol Loading Errors:**
+- Ensure `lib/libclob_sdk.so` is present and has correct permissions
+- Verify library was built with FFI features enabled
+- Check library path in error messages
+
+---
+
+## Development
+
+### Building from Source
+
+```bash
+# Debug build
+cargo build
+
+# Release build (optimized)
+cargo build --release
+
+# Run tests
+cargo test
+
+# Check code formatting
+cargo fmt --check
+
+# Run linter
+cargo clippy
+```
+
+### Project Structure
+
+```
+polymarket-arbitrage-trading-bot-rust/
+├── src/
+│   ├── api.rs              # Polymarket API client
+│   ├── clob_sdk.rs         # CLOB SDK FFI bindings
+│   ├── monitor.rs          # Market monitoring
+│   ├── trader.rs           # Trading logic
+│   ├── simulation.rs       # Simulation engine
+│   └── bin/                 # Binary entry points
+├── lib/                     # Shared libraries
+├── config.example.json      # Configuration template
+└── README.md                # This file
+```
+
+---
+
+## Support and Contributions
+
+For questions, feature requests, or support inquiries, please refer to the project's issue tracker or contact the maintainers.
+
+---
 
 ## License
 
-Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+[Specify your license here]
+
+---
+
+## Disclaimer
+
+This software is provided for educational and research purposes. Trading cryptocurrency prediction markets involves substantial risk of loss. Users are responsible for understanding the risks involved and for compliance with all applicable laws and regulations. The authors and maintainers assume no liability for trading losses or damages resulting from the use of this software.
+
+---
+
+## Keywords
+
+**Primary:** Polymarket trading bot, Polymarket arbitrage bot, Polymarket copytrading bot, Polymarket crypto bot, Polymarket sports bot, automated Polymarket trading
+
+**Secondary:** Prediction markets bot, crypto prediction markets, dual limit order strategy, trailing stop trading bot, BTC trading bot, ETH trading bot, SOL trading bot, XRP trading bot, Rust trading bot, open source Polymarket bot, automated Polymarket strategies, Polymarket market making bot, Polymarket high-frequency trading, Polymarket scalping bot

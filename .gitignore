@@ -1,26 +1,9 @@
-# Cargo build artifacts
-/target/
+/target
 **/*.rs.bk
 Cargo.lock
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Editor backups
-*.bak
-*.orig
-
-# Coverage
-*.profraw
-*.profdata
-lcov.info
-tarpaulin-report.html
-coverage/
+config.json
+*.log
+history.toml
+.env
+.cursor
+history
